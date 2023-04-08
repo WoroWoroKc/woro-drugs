@@ -1,4 +1,5 @@
 local actionTable = {}
+local CurrentZone = nil
 
 function CreateActionKey(index, coords, distance, config, event, textBox)
     local eventType = "client"
@@ -12,23 +13,17 @@ function CreateActionKey(index, coords, distance, config, event, textBox)
     local marker = {}
 
     if index == nil then
-        print('"CreateActionKey" empty variable index!')
-        return
+        return print('"CreateActionKey" empty variable index!')
     elseif coords == nil then
-        print('"CreateActionKey" empty variable coords!')
-        return
+        return print('"CreateActionKey" empty variable coords!')
     elseif distance == nil then
-        print('"CreateActionKey" empty variable distance!')
-        return
+        return print('"CreateActionKey" empty variable distance!')
     elseif config == nil then
-        print('"CreateActionKey" empty table config!')
-        return
+        return print('"CreateActionKey" empty table config!')
     elseif event == nil then
-        print('"CreateActionKey" empty table event!')
-        return
+        return print('"CreateActionKey" empty table event!')
     elseif event.eventName == nil then
-        print('"CreateActionKey" empty table event variable eventName!')
-        return 
+        return print('"CreateActionKey" empty table event variable eventName!')
     else
 
         if event.isServerEvent then
@@ -54,23 +49,9 @@ function CreateActionKey(index, coords, distance, config, event, textBox)
         end
 
         if textBox ~= nil and textBox.label ~= nil then
-            exports["bt-polyzone"]:AddBoxZone("woro-base:CreateActionKey:"..index, coords, distance, distance, {
-                name = "woro-base:CreateActionKey:"..index,
-                heading = 0,
-                -- debugPoly = true,
-                minZ = coords.z - distance,
-                maxZ = coords.z + distance
-            })
-
             textBoxLabel = textBox.label
         end
-
-        for i=1, #actionTable do
-            if actionTable[i].index == index then
-                print('exports "CreateActionKey" index error')
-                return
-            end
-        end
+        
 
         if markerStatus then
             CreateThread(function()
@@ -92,8 +73,14 @@ function CreateActionKey(index, coords, distance, config, event, textBox)
             end)
         end
 
-        actionTable[#actionTable + 1] = {
-            index = index,
+        local zone = BoxZone:Create(coords, distance, distance, {
+            name = 'woro-base:'..index,
+            offset = {0.0, 0.0, 0.0},
+            scale = {1.0, 1.0, 1.0},
+            debugPoly = false
+        })
+
+        actionTable['woro-base:'..index] = {
             coords = coords,
             distance = distance,
             eventName = event.eventName,
@@ -107,100 +94,100 @@ function CreateActionKey(index, coords, distance, config, event, textBox)
             },
         }
 
+        CreateThread(function()
+            zone:onPlayerInOut(function(isPointInside)
+                if isPointInside then
+                    CurrentZone = 'woro-base:'..index
+
+                    local actionTable = actionTable[CurrentZone]
+                    if actionTable.job.status then
+                        for i2=1, #actionTable.job.jobs do
+                            if ESX.PlayerData.job.name == actionTable.job.jobs[i2] then
+                                jobAcces = true
+                            end
+                        end
+                        if jobAcces then
+                            if actionTable.inVehicle then
+                                if IsPedInAnyVehicle(ped) then
+                                    ESX.TextUI(actionTable.textBoxLabel, "info")
+                                end
+                            else
+                                ESX.TextUI(actionTable.textBoxLabel, "info")
+                            end
+                        end
+                    else
+                        if actionTable.inVehicle then
+                            if IsPedInAnyVehicle(ped) then
+                                ESX.TextUI(actionTable.textBoxLabel, "info")
+                            end
+                        else
+                            ESX.TextUI(actionTable.textBoxLabel, "info")
+                        end
+                    end
+
+
+                else
+                    CurrentZone = nil
+                    ESX.HideUI()
+                end
+            end)
+        end)
+
     end
 end
 
 
-AddEventHandler('bt-polyzone:enter', function(name)
-    local ped = PlayerPedId()
-    local jobAcces = false
-    for i=1, #actionTable do 
-        if name == "woro-base:CreateActionKey:"..actionTable[i].index then
-            if actionTable[i].job.status then
-                for i2=1, #actionTable[i].job.jobs do
-                    if GetJobName() == actionTable[i].job.jobs[i2] then
-                        jobAcces = true
-                    end
-                end
-                if jobAcces then
-                    if actionTable[i].inVehicle then
-                        if IsPedInAnyVehicle(ped) then
-                            ESX.TextUI(actionTable[i].textBoxLabel, "info")
-                        end
-                    else
-                        ESX.TextUI(actionTable[i].textBoxLabel, "info")
-                    end
-                end
-            else
-                if actionTable[i].inVehicle then
-                    if IsPedInAnyVehicle(ped) then
-                        ESX.TextUI(actionTable[i].textBoxLabel, "info")
-                    end
-                else
-                    ESX.TextUI(actionTable[i].textBoxLabel, "info")
-                end
-            end
-
-            return
-        end
-    end 
-end)
-AddEventHandler('bt-polyzone:exit', function(name)
-    for i=1, #actionTable do 
-        if name == "woro-base:CreateActionKey:"..actionTable[i].index then
-            ESX.HideUI()
-            return
-        end
-    end 
-end)
 
 
 RegisterCommand("KeyActionKey", function()
-    local ped = PlayerPedId()
-    local pCoords = GetEntityCoords(ped)
-    local jobAcces = false
+    if CurrentZone == nil then
+        return
+    end
 
-    for i=1, #actionTable do
-        local dist = #(pCoords - actionTable[i].coords)
-        if dist < actionTable[i].distance then 
-            if actionTable[i].job.status then
-                for i2=1, #actionTable[i].job.jobs do
-                    if GetJobName() == actionTable[i].job.jobs[i2] then
-                        jobAcces = true
-                    end
+    local playerPed = PlayerPedId()
+
+
+    local actionTable = actionTable[CurrentZone]
+    
+    local dist = #(pCoords - actionTable.coords)
+    if dist < actionTable.distance then 
+        if actionTable.job.status then
+            for i2=1, #actionTable.job.jobs do
+                if ESX.PlayerData.job.name == actionTable.job.jobs[i2] then
+                    jobAcces = true
                 end
-                if jobAcces then
-                    if actionTable[i].inVehicle then
-                        if IsPedInAnyVehicle(ped) then
-                            if actionTable[i].eventType == "client" then
-                                TriggerEvent(actionTable[i].eventName, actionTable[i].eventArgs)
-                            elseif actionTable[i].eventType == "server" then
-                                TriggerServerEvent(actionTable[i].eventName, actionTable[i].eventArgs)
-                            end
-                        end
-                    else
-                        if actionTable[i].eventType == "client" then
-                            TriggerEvent(actionTable[i].eventName, actionTable[i].eventArgs)
-                        elseif actionTable[i].eventType == "server" then
-                            TriggerServerEvent(actionTable[i].eventName, actionTable[i].eventArgs)
-                        end
-                    end
-                end
-            else
-                if actionTable[i].inVehicle then
+            end
+            if jobAcces then
+                if actionTable.inVehicle then
                     if IsPedInAnyVehicle(ped) then
-                        if actionTable[i].eventType == "client" then
-                            TriggerEvent(actionTable[i].eventName, actionTable[i].eventArgs)
-                        elseif actionTable[i].eventType == "server" then
-                            TriggerServerEvent(actionTable[i].eventName, actionTable[i].eventArgs)
+                        if actionTable.eventType == "client" then
+                            TriggerEvent(actionTable.eventName, actionTable.eventArgs)
+                        elseif actionTable.eventType == "server" then
+                            TriggerServerEvent(actionTable.eventName, actionTable.eventArgs)
                         end
                     end
                 else
-                    if actionTable[i].eventType == "client" then
-                        TriggerEvent(actionTable[i].eventName, actionTable[i].eventArgs)
-                    elseif actionTable[i].eventType == "server" then
-                        TriggerServerEvent(actionTable[i].eventName, actionTable[i].eventArgs)
+                    if actionTable.eventType == "client" then
+                        TriggerEvent(actionTable.eventName, actionTable.eventArgs)
+                    elseif actionTable.eventType == "server" then
+                        TriggerServerEvent(actionTable.eventName, actionTable.eventArgs)
                     end
+                end
+            end
+        else
+            if actionTable.inVehicle then
+                if IsPedInAnyVehicle(ped) then
+                    if actionTable.eventType == "client" then
+                        TriggerEvent(actionTable.eventName, actionTable.eventArgs)
+                    elseif actionTable.eventType == "server" then
+                        TriggerServerEvent(actionTable.eventName, actionTable.eventArgs)
+                    end
+                end
+            else
+                if actionTable.eventType == "client" then
+                    TriggerEvent(actionTable.eventName, actionTable.eventArgs)
+                elseif actionTable.eventType == "server" then
+                    TriggerServerEvent(actionTable.eventName, actionTable.eventArgs)
                 end
             end
         end
@@ -208,3 +195,13 @@ RegisterCommand("KeyActionKey", function()
 end)
 
 RegisterKeyMapping("KeyActionKey", "Przycisk Interakcji", "keyboard", "E")
+
+
+local function Main()
+    ESX.PlayerData = ESX.GetPlayerData()
+end
+
+RegisterNetEvent('esx:setJob', function(job)
+	ESX.PlayerData.job = job
+end)
+CreateThread(Main)

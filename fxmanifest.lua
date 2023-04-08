@@ -23,4 +23,5 @@ client_scripts {
 
 dependencies {
     'es_extended',
+    'PolyZone',
 }
