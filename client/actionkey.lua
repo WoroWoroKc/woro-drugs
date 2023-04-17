@@ -77,7 +77,7 @@ function CreateActionKey(index, coords, distance, config, event, textBox)
             name = 'woro-base:'..index,
             offset = {0.0, 0.0, 0.0},
             scale = {1.0, 1.0, 1.0},
-            debugPoly = true
+            -- debugPoly = true
         })
 
         actionTable['woro-base:'..index] = {
@@ -96,6 +96,7 @@ function CreateActionKey(index, coords, distance, config, event, textBox)
 
         CreateThread(function()
             zone:onPlayerInOut(function(isPointInside)
+                local playerPed = PlayerPedId()
                 if isPointInside then
                     CurrentZone = 'woro-base:'..index
 
@@ -108,7 +109,7 @@ function CreateActionKey(index, coords, distance, config, event, textBox)
                         end
                         if jobAcces then
                             if actionTable.inVehicle then
-                                if IsPedInAnyVehicle(ped) then
+                                if IsPedInAnyVehicle(playerPed) then
                                     ESX.TextUI(actionTable.textBoxLabel, "info")
                                 end
                             else
@@ -117,7 +118,7 @@ function CreateActionKey(index, coords, distance, config, event, textBox)
                         end
                     else
                         if actionTable.inVehicle then
-                            if IsPedInAnyVehicle(ped) then
+                            if IsPedInAnyVehicle(playerPed) then
                                 ESX.TextUI(actionTable.textBoxLabel, "info")
                             end
                         else
