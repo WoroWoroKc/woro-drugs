@@ -77,7 +77,7 @@ function CreateActionKey(index, coords, distance, config, event, textBox)
             name = 'woro-base:'..index,
             offset = {0.0, 0.0, 0.0},
             scale = {1.0, 1.0, 1.0},
-            debugPoly = false
+            debugPoly = true
         })
 
         actionTable['woro-base:'..index] = {
@@ -145,6 +145,7 @@ RegisterCommand("KeyActionKey", function()
     end
 
     local playerPed = PlayerPedId()
+    local pCoords = GetEntityCoords(playerPed)
 
 
     local actionTable = actionTable[CurrentZone]
@@ -159,7 +160,7 @@ RegisterCommand("KeyActionKey", function()
             end
             if jobAcces then
                 if actionTable.inVehicle then
-                    if IsPedInAnyVehicle(ped) then
+                    if IsPedInAnyVehicle(playerPed) then
                         if actionTable.eventType == "client" then
                             TriggerEvent(actionTable.eventName, actionTable.eventArgs)
                         elseif actionTable.eventType == "server" then
@@ -176,7 +177,7 @@ RegisterCommand("KeyActionKey", function()
             end
         else
             if actionTable.inVehicle then
-                if IsPedInAnyVehicle(ped) then
+                if IsPedInAnyVehicle(playerPed) then
                     if actionTable.eventType == "client" then
                         TriggerEvent(actionTable.eventName, actionTable.eventArgs)
                     elseif actionTable.eventType == "server" then
@@ -195,7 +196,6 @@ RegisterCommand("KeyActionKey", function()
 end)
 
 RegisterKeyMapping("KeyActionKey", "Przycisk Interakcji", "keyboard", "E")
-
 
 local function Main()
     ESX.PlayerData = ESX.GetPlayerData()
