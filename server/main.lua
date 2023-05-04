@@ -3,14 +3,11 @@ local Main = {
     Cooldown = {},
 }
 
-Main.SetupScript = function(resourceName)
-    if (GetCurrentResourceName() ~= resourceName) then
-        return
-    end
-
+Main.SetupScript = function()
     Wait(1000)
 
-    GlobalState.WoroDrugsPoliceOnline = 0
+    local xPlayers = ESX.GetExtendedPlayers('job', Config.PoliceJobName)
+    GlobalState.WoroDrugsPoliceOnline = #xPlayers
 
     for i=1, #Config.Drugs do
         local drugsData = Config.Drugs[i]
@@ -29,15 +26,6 @@ Main.SetupScript = function(resourceName)
     end
 
     TriggerClientEvent('woro-drugs:client:setupScript', -1, Main.Data)
-
-    local xPlayers = ESX.GetExtendedPlayers()
-    for _, xPlayer in pairs(xPlayers) do
-        local playerJob = xPlayer.getJob()
-
-        if playerJob.name == Config.PoliceJobName then
-            GlobalState.WoroDrugsPoliceOnline = GlobalState.WoroDrugsPoliceOnline + 1
-        end
-    end
 end
 
 Main.GiveItem = function(data)
@@ -106,8 +94,8 @@ Main.PlayerDrop = function()
 end
 
 
+CreateThread(Main.SetupScript)
 RegisterNetEvent('woro-drugs:client:giveItem', Main.GiveItem)
-AddEventHandler('onResourceStart', Main.SetupScript)
 
 RegisterNetEvent('esx:setJob', Main.UpdatePolice)
 AddEventHandler('playerDropped', Main.PlayerDrop)
