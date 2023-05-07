@@ -1,5 +1,6 @@
 local Main = {
-    Action = false
+    Action = false,
+    AntiSpam =  false,
 }
 
 Main.SetupScript = function(data)
@@ -25,10 +26,15 @@ Main.SetupScript = function(data)
 end
 
 Main.StartAction = function(data)
-    if Main.Action == true then   
+    if Main.Action == true or Main.AntiSpam == true then   
         return
     end
-    
+    Main.AntiSpam = true
+
+    SetTimeout(300, function()
+        Main.AntiSpam = false
+    end)
+
     if GlobalState.WoroDrugsPoliceOnline < data.police then
         return ESX.ShowNotification('Nie ma wystarczająco policji')
     end
